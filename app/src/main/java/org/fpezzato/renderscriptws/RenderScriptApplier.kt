@@ -32,7 +32,7 @@ class RenderScriptApplier(
     }
 
 
-    suspend fun process(threshold: Float, blurRadius: Float) {
+    fun process(threshold: Float, blurRadius: Float) {
         thresholdScript._thresholdValue = threshold
 
         thresholdScript.forEach_filter(inAllocation, outAllocation)
@@ -41,9 +41,9 @@ class RenderScriptApplier(
         blurIntrinsicScript.setInput(outAllocation)
         blurIntrinsicScript.forEach(outAllocation)
 
-        lutIntrinsicScript.setBlue(100,255)
+      /*  lutIntrinsicScript.setBlue(100,255)
         lutIntrinsicScript.setGreen(20,250)
-        lutIntrinsicScript.forEach(outAllocation,outAllocation)
+        lutIntrinsicScript.forEach(outAllocation,outAllocation)*/
 
         outAllocation.copyTo(bitmapOut)
     }
