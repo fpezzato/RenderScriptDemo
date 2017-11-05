@@ -6,9 +6,10 @@ import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 import android.widget.ImageView
 import android.widget.SeekBar
-import io.reactivex.disposables.CompositeDisposable
+import kotlinx.coroutines.experimental.CoroutineStart
 import kotlinx.coroutines.experimental.android.UI
 import kotlinx.coroutines.experimental.async
+import kotlinx.coroutines.experimental.launch
 
 
 class MainActivity : AppCompatActivity() {
@@ -18,8 +19,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var bitmapOut: Bitmap
     private lateinit var imageView: ImageView
     private lateinit var seekbarThreshold: SeekBar
+    private lateinit var seekbarBlur: SeekBar
     private lateinit var renderScriptApplier: RenderScriptApplier
-    var composite = CompositeDisposable()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -37,36 +38,53 @@ class MainActivity : AppCompatActivity() {
 
             override fun onStopTrackingTouch(seekBar: SeekBar?) {}
         })
+        seekbarBlur = findViewById(R.id.seekBarBlur)
+        seekbarBlur.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                applyTranformations()
+            }
+
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
+
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {}
+        })
 
         renderScriptApplier = RenderScriptApplier(this, bitmapIn, bitmapOut)
     }
 
+
     override fun onResume() {
         super.onResume()
-        /* composite.add(renderScriptApplier.result()
-                 .subscribe {
-                     imageView.setImageBitmap(bitmapOut)
-                     imageView.invalidate()
-                 }
-         )
- */
-        applyTranformations()
+
+        launch(UI, CoroutineStart.ATOMIC) {
 
 
-        /* Observable.interval(100, TimeUnit.MILLISECONDS).subscribe { it ->
-             val max = 1.0f
-             val min = 0f
-             val f = ((max - min) * (it%100 / 100.0) + min).toFloat()
-             renderScriptApplier.performFilter(RenderScriptApplier.Config(f))
-         }*/
+            for (i in 1..100) {
+
+
+                val job = async() {
+                    renderScriptApplier.process(
+                            currentProgress(i.toFloat(), 0f, 1f),
+                            currentProgress(i.toFloat(), 0.1f, 25f) //25 is max supported by intrinsic rs blur
+                    )
+                }
+                job.await()
+                imageView.setImageBitmap(bitmapOut)
+                imageView.invalidate()
+
+            }
+
+        }
     }
+
 
     private fun applyTranformations() {
         async(UI) {
             val job = async() {
-                renderScriptApplier.workload(currentProgress(seekbarThreshold,0f,1f))
-                //imageView.setImageBitmap(bitmapOut)
-                // imageView.invalidate()
+                renderScriptApplier.process(
+                        currentProgress(seekbarThreshold, 0f, 1f),
+                        currentProgress(seekbarBlur, 0.1f, 25f) //25 is max supported by intrinsic rs blur
+                )
             }
             job.await()
             imageView.setImageBitmap(bitmapOut)
@@ -74,13 +92,9 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    override fun onPause() {
-        composite.clear()
-        super.onPause()
-    }
 
     private fun allocateBitmaps() {
-        bitmapIn = loadBitmap(R.drawable.data)
+        bitmapIn = loadBitmap(R.drawable.photo1)
         bitmapOut = Bitmap.createBitmap(
                 bitmapIn.getWidth(),
                 bitmapIn.getHeight(),
@@ -94,8 +108,12 @@ class MainActivity : AppCompatActivity() {
         return BitmapFactory.decodeResource(resources, resource, options)
     }
 
-    private fun currentProgress(seekBar: SeekBar, min :Float, max: Float): Float {
-        return  ((max - min) * (seekBar.progress / 100.0) + min).toFloat()
+    private fun currentProgress(seekBar: SeekBar, min: Float, max: Float): Float {
+        return currentProgress(seekBar.progress.toFloat(), min, max)
+    }
+
+    private fun currentProgress(current: Float, min: Float, max: Float): Float {
+        return ((max - min) * (current / 100) + min)
     }
 
 }
