@@ -34,7 +34,7 @@ class RenderScriptApplier(
 
     suspend fun process(threshold: Float, blurRadius: Float) {
         synchronized(this) {
-            if(running.get()){
+            if (running.get()) {
                 return
             }
             running.set(true)

@@ -57,33 +57,31 @@ class MainActivity : AppCompatActivity() {
         super.onResume()
 
         launch(UI, CoroutineStart.ATOMIC) {
-
-
-            for (i in 1..100) {
-
-
+            for (i in 1..200) {
+                var j = i
+                if (j > 100) {
+                    j = 200 - j
+                }
                 val job = async() {
                     renderScriptApplier.process(
-                            currentProgress(i.toFloat(), 0f, 1f),
-                            currentProgress(i.toFloat(), 0.1f, 25f) //25 is max supported by intrinsic rs blur
+                            currentProgress(j.toFloat(), 0f, 1f),
+                            currentProgress(j.toFloat(), 0.1f, 25f)
                     )
                 }
                 job.await()
                 imageView.setImageBitmap(bitmapOut)
                 imageView.invalidate()
-
             }
 
         }
     }
-
 
     private fun applyTranformations() {
         async(UI) {
             val job = async() {
                 renderScriptApplier.process(
                         currentProgress(seekbarThreshold, 0f, 1f),
-                        currentProgress(seekbarBlur, 0.1f, 25f) //25 is max supported by intrinsic rs blur
+                        currentProgress(seekbarBlur, 0.1f, 25f)
                 )
             }
             job.await()
