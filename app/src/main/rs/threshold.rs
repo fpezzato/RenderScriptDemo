@@ -14,7 +14,7 @@ uchar4 __attribute__((kernel)) filter(const uchar4 in, uint32_t x, uint32_t y) {
     float luminance = dot(LUMINANCE_VECTOR, pixel.rgb);
     //rsDebug("===========YAY==================",luminance );
     //rsDebug("=                         ======",thresholdValue );
-    if (luminance < 0.3) {
+    if (luminance < thresholdValue) {
         pixel.rgb = COLOR;
     }else{
 

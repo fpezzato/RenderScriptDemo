@@ -6,10 +6,8 @@ import android.renderscript.Allocation
 import android.renderscript.RenderScript
 import android.util.Log
 import com.example.android.renderscriptintrinsic.ScriptC_threshold
-import io.reactivex.Observable
-import io.reactivex.android.schedulers.AndroidSchedulers
-import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.PublishSubject
+import java.util.concurrent.atomic.AtomicBoolean
 
 class RenderScriptApplier(
         private val context: Context,
@@ -23,6 +21,7 @@ class RenderScriptApplier(
     private var thresholdScript: ScriptC_threshold
     private val trigger = PublishSubject.create<Config>()
     private val filterPerformed = PublishSubject.create<Unit>()
+    private var isRunning = AtomicBoolean(false)
 
     init {
         renderscript = RenderScript.create(context)
@@ -30,32 +29,40 @@ class RenderScriptApplier(
         outAllocation = Allocation.createFromBitmap(renderscript, bitmapIn) //TODO Check.
         thresholdScript = ScriptC_threshold(renderscript)
 
-        trigger
+        /*trigger
                 .subscribeOn(Schedulers.computation())
                 .observeOn(AndroidSchedulers.mainThread())
+                .filter { !isRunning.get() }
                 .map { config ->
-                    thresholdScript._thresholdValue = 0.4f
-                    val time = System.currentTimeMillis()
-                    thresholdScript.forEach_filter(inAllocation, outAllocation)
-                    val delta = System.currentTimeMillis() - time
-                    Log.wtf("YOOOO","delta= $delta")
+                    synchronized(this){
+                        isRunning.set(true)
+                        thresholdScript._thresholdValue = config.threshold
+                        val time = System.currentTimeMillis()
+                        thresholdScript.forEach_filter(inAllocation, outAllocation)
+                        val delta = System.currentTimeMillis() - time
+                        Log.wtf("YOOOO", "delta= $delta")
+                        isRunning.set(false)
+                    }
+
                 }
                 .subscribe {
                     outAllocation.copyTo(bitmapOut)
                     filterPerformed.onNext(Unit)
-                }
+                }*/
     }
 
-    fun performFilter(config: Config) {
-        trigger.onNext(config)
+    suspend fun workload(n: Float): Unit {
+        thresholdScript._thresholdValue = n
+        val time = System.currentTimeMillis()
+        thresholdScript.forEach_filter(inAllocation, outAllocation)
+        val delta = System.currentTimeMillis() - time
+        outAllocation.copyTo(bitmapOut)
+        Log.wtf("YOOOO", "delta= $delta")
+        return
     }
 
-    fun result(): Observable<Unit> {
-        return filterPerformed
-    }
 
-    class Config {
-    }
+    data class Config(val threshold: Float)
 
 
 }
