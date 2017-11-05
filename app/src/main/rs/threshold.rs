@@ -12,8 +12,7 @@ static const float3 LUMINANCE_VECTOR = { 0.2125, 0.7154, 0.0721 };
 uchar4 __attribute__((kernel)) filter(const uchar4 in, uint32_t x, uint32_t y) {
     float4 pixel = rsUnpackColor8888(in);
     float luminance = dot(LUMINANCE_VECTOR, pixel.rgb);
-    //rsDebug("===========YAY==================",luminance );
-    //rsDebug("=                         ======",thresholdValue );
+
     if (luminance < thresholdValue) {
         pixel.rgb = COLOR;
     }else{

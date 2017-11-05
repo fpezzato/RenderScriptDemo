@@ -6,9 +6,8 @@ import android.renderscript.Allocation
 import android.renderscript.Element
 import android.renderscript.RenderScript
 import android.renderscript.ScriptIntrinsicBlur
-import android.util.Log
+import android.renderscript.ScriptIntrinsicLUT
 import com.example.android.renderscriptintrinsic.ScriptC_threshold
-import java.util.concurrent.atomic.AtomicBoolean
 
 class RenderScriptApplier(
         private val context: Context,
@@ -21,6 +20,7 @@ class RenderScriptApplier(
     private var outAllocation: Allocation
     private var thresholdScript: ScriptC_threshold
     private var blurIntrinsicScript: ScriptIntrinsicBlur
+    private var lutIntrinsicScript: ScriptIntrinsicLUT
 
     init {
         renderscript = RenderScript.create(context)
@@ -28,30 +28,23 @@ class RenderScriptApplier(
         outAllocation = Allocation.createFromBitmap(renderscript, bitmapIn)
         thresholdScript = ScriptC_threshold(renderscript)
         blurIntrinsicScript = ScriptIntrinsicBlur.create(renderscript, Element.U8_4(renderscript));
+        lutIntrinsicScript = ScriptIntrinsicLUT.create(renderscript, Element.U8_4(renderscript))
     }
 
-    val running = AtomicBoolean(false)
 
     suspend fun process(threshold: Float, blurRadius: Float) {
-        synchronized(this) {
-            if (running.get()) {
-                return
-            }
-            running.set(true)
-            thresholdScript._thresholdValue = threshold
-            val time = System.currentTimeMillis()
+        thresholdScript._thresholdValue = threshold
 
-            thresholdScript.forEach_filter(inAllocation, outAllocation)
+        thresholdScript.forEach_filter(inAllocation, outAllocation)
 
-            blurIntrinsicScript.setRadius(blurRadius)
-            blurIntrinsicScript.setInput(outAllocation)
-            blurIntrinsicScript.forEach(outAllocation)
+        blurIntrinsicScript.setRadius(blurRadius)
+        blurIntrinsicScript.setInput(outAllocation)
+        blurIntrinsicScript.forEach(outAllocation)
 
-            val delta = System.currentTimeMillis() - time
-            outAllocation.copyTo(bitmapOut)
+        lutIntrinsicScript.setBlue(100,255)
+        lutIntrinsicScript.setGreen(20,250)
+        lutIntrinsicScript.forEach(outAllocation,outAllocation)
 
-            Log.wtf("YOOOO", "delta= $delta")
-            running.set(false)
-        }
+        outAllocation.copyTo(bitmapOut)
     }
 }
