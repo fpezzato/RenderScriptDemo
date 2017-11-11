@@ -4,6 +4,8 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.Paint
 import android.util.AttributeSet
 import android.widget.ImageView
 
@@ -11,9 +13,10 @@ class RenderScriptImageView @JvmOverloads constructor(
         context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
 ) : ImageView(context, attrs, defStyleAttr) {
 
-    private lateinit var renderScriptApplier: RenderScriptApplier
+    private var renderScriptApplier: RenderScriptApplier
     private lateinit var bitmapIn: Bitmap
     private lateinit var bitmapOut: Bitmap
+    var config = RenderScriptApplier.Config()
 
     init {
         setWillNotDraw(false)
@@ -22,10 +25,14 @@ class RenderScriptImageView @JvmOverloads constructor(
         setImageBitmap(bitmapOut)
     }
 
-    var currentValue = 0
-    var growing = true
+    private var currentValue = 0
+    private var growing = true
+    private var lastDrawMsValues = LongArray(10)
+    private var lastDrawMsIdx = 0
+    private val textPaint: Paint = Paint(Color.BLACK).apply { textSize = 30f }
 
     override fun onDraw(canvas: Canvas?) {
+        val currentTimeMillis = System.currentTimeMillis()
         super.onDraw(canvas)
         currentValue += if (growing) 1 else -1
         if (currentValue >= 100) {
@@ -36,11 +43,25 @@ class RenderScriptImageView @JvmOverloads constructor(
         }
 
         renderScriptApplier.process(
+                config,
                 currentProgress(currentValue.toFloat(), 0f, 1f),
                 currentProgress(currentValue.toFloat(), 0.1f, 25f)
         )
         setImageBitmap(bitmapOut)
         invalidate()
+        val delta = System.currentTimeMillis() - currentTimeMillis
+
+        canvas?.drawText(computeFPS(delta), 100f, 100f, textPaint)
+    }
+
+    private fun computeFPS(delta: Long): String {
+        lastDrawMsIdx++
+        if (lastDrawMsIdx >= lastDrawMsValues.size) {
+            lastDrawMsIdx = 0
+        }
+        lastDrawMsValues[lastDrawMsIdx] = delta
+        val media =  1000 / (lastDrawMsValues.sum()/lastDrawMsValues.size)
+        return "fps:${media.toInt()}"
     }
 
     private fun allocateBitmaps() {

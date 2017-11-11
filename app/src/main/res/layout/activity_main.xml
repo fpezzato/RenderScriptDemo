@@ -5,19 +5,50 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="org.fpezzato.renderscriptws.MainActivity">
+    tools:context="org.fpezzato.renderscriptws.MainActivity"
+    tools:layout_editor_absoluteY="81dp">
 
     <org.fpezzato.renderscriptws.RenderScriptImageView
         android:id="@+id/imageView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
         android:scaleType="centerInside"
         tools:src="@drawable/photo1"
         />
 
+
+    <CheckBox
+        android:id="@+id/enable_blur"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        android:checked="true"
+        android:text="@string/enable_blur"
+        app:layout_constraintBottom_toBottomOf="@+id/imageView"
+        app:layout_constraintStart_toStartOf="@+id/imageView"
+        app:layout_constraintTop_toTopOf="@+id/imageView"
+        app:layout_constraintVertical_bias="0.44"/>
+
+    <CheckBox
+        android:id="@+id/enable_threshold"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:checked="true"
+        android:text="@string/enable_threshold"
+        app:layout_constraintStart_toStartOf="@+id/enable_blur"
+        app:layout_constraintTop_toBottomOf="@+id/enable_blur"/>
+
+    <CheckBox
+        android:id="@+id/enable_lut"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:checked="true"
+        android:text="@string/enable_lut"
+        app:layout_constraintStart_toStartOf="@+id/enable_threshold"
+        app:layout_constraintTop_toBottomOf="@+id/enable_threshold"/>
 
 </android.support.constraint.ConstraintLayout>
