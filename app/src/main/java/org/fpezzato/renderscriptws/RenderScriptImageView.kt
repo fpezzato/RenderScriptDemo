@@ -40,7 +40,7 @@ class RenderScriptImageView @JvmOverloads constructor(
         renderScriptApplier.process(
                 applyBlur,
                 currentProgress(currentValue.toFloat(), 0f, 1f),
-                currentProgress(currentValue.toFloat(), 0.1f, 25f)
+                currentProgress(currentValue.toFloat(), 0.1f, 25f) // 25 is max supported🤷
         )
         setImageBitmap(bitmapOut)
         invalidate()

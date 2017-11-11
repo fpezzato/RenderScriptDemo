@@ -33,8 +33,6 @@ class RenderScriptApplier(
     }
 
     fun process(blurEnabled: Boolean = true, threshold: Float, blurRadius: Float) {
-
-
         thresholdScript._thresholdValue = threshold
         thresholdScript.forEach_filter(inAllocation, allocationTmp)
 
