@@ -16,7 +16,7 @@ class RenderScriptImageView @JvmOverloads constructor(
     private var renderScriptApplier: RenderScriptApplier
     private lateinit var bitmapIn: Bitmap
     private lateinit var bitmapOut: Bitmap
-    var config = RenderScriptApplier.Config()
+    var applyBlur = true
 
     init {
         setWillNotDraw(false)
@@ -33,7 +33,24 @@ class RenderScriptImageView @JvmOverloads constructor(
 
     override fun onDraw(canvas: Canvas?) {
         val currentTimeMillis = System.currentTimeMillis()
+
         super.onDraw(canvas)
+        calculatePercentage()
+
+        renderScriptApplier.process(
+                applyBlur,
+                currentProgress(currentValue.toFloat(), 0f, 1f),
+                currentProgress(currentValue.toFloat(), 0.1f, 25f)
+        )
+        setImageBitmap(bitmapOut)
+        invalidate()
+
+
+        val delta = System.currentTimeMillis() - currentTimeMillis
+        canvas?.drawText(computeFPS(delta), 100f, 100f, textPaint)
+    }
+
+    private fun calculatePercentage() {
         currentValue += if (growing) 1 else -1
         if (currentValue >= 100) {
             growing = false
@@ -41,17 +58,6 @@ class RenderScriptImageView @JvmOverloads constructor(
         if (currentValue <= 0) {
             growing = true
         }
-
-        renderScriptApplier.process(
-                config,
-                currentProgress(currentValue.toFloat(), 0f, 1f),
-                currentProgress(currentValue.toFloat(), 0.1f, 25f)
-        )
-        setImageBitmap(bitmapOut)
-        invalidate()
-        val delta = System.currentTimeMillis() - currentTimeMillis
-
-        canvas?.drawText(computeFPS(delta), 100f, 100f, textPaint)
     }
 
     private fun computeFPS(delta: Long): String {
@@ -60,8 +66,8 @@ class RenderScriptImageView @JvmOverloads constructor(
             lastDrawMsIdx = 0
         }
         lastDrawMsValues[lastDrawMsIdx] = delta
-        val media =  1000 / (lastDrawMsValues.sum()/lastDrawMsValues.size)
-        return "fps:${media.toInt()}"
+        val media = (lastDrawMsValues.sum() / lastDrawMsValues.size)
+        return "ms:${media.toInt()}"
     }
 
     private fun allocateBitmaps() {
